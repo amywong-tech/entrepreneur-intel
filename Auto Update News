@@ -1,0 +1,48 @@
+name: Auto Update News
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+jobs:
+  update-news:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: |
+          pip install feedparser python-dateutil requests
+          pip install openai anthropic google-generativeai
+      
+      - name: Fetch news
+        run: python fetch_news.py
+        continue-on-error: true
+      
+      - name: Analyze with AI
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: python ai_analyzer.py
+        continue-on-error: true
+      
+      - name: Generate frontend data
+        run: python generate_frontend_data.py
+      
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/news.json
+          git diff --quiet && git diff --staged --quiet || git commit -m "🤖 Update: $(date)"
+          git push
+        continue-on-error: true
