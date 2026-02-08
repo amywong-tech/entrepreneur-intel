@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrepreneur Intelligence | 创业者情报</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            background: #ffffff;
+            color: #000000;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d1d1d6;
+            border-radius: 3px;
+        }
+
+        .card {
+            transition: all 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        .chart-mini {
+            position: relative;
+            height: 60px;
+        }
+
+        .lang-switch {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .lang-switch:hover {
+            opacity: 0.7;
+        }
+
+        .tab-btn {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            border-bottom: 2px solid #000;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-new { background: #000; color: #fff; }
+        .badge-hot { background: #ff3b30; color: #fff; }
+        .badge-trending { background: #ff9500; color: #fff; }
+
+        .voice-player {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #000;
+            color: #fff;
+            border-radius: 16px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            min-width: 320px;
+            z-index: 100;
+            display: none;
+        }
+
+        .voice-player.show {
+            display: block;
+        }
+
+        .voice-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #000;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 99;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .voice-btn:hover {
+            transform: scale(1.05);
+            background: #333;
+        }
+
+        .voice-btn.playing {
+            background: #ff3b30;
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(1); opacity: 0.5; }
+            100% { transform: scale(1.3); opacity: 0; }
+        }
+
+        .pulse {
+            animation: pulse-ring 1.5s ease-out infinite;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 12px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #fff;
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航 -->
+    <nav class="border-b border-gray-200 sticky top-0 bg-white z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-xl font-semibold" id="mainTitle">创业者情报中心</h1>
+                    <p class="text-xs text-gray-500 mt-1" id="subtitle">每日精选 · 助力决策</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-sm text-gray-600">2026-01-12</span>
+                    <button onclick="openVoiceSettings()" class="text-sm text-gray-600 hover:text-black">
+                        🎙️ <span class="zh">语音</span><span class="en hidden">Voice</span>
+                    </button>
+                    <button onclick="toggleLanguage()" class="lang-switch text-sm font-medium px-3 py-1 border border-gray-300 rounded-md">
+                        <span id="langBtn">EN</span>
+                    </button>
+                    <a href="admin.html" class="text-sm text-black hover:text-gray-600 underline" id="adminLink">管理</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-6 py-6">
+        <!-- 市场大盘 - 紧凑双排布局 -->
+        <div class="mb-6">
+            <h2 class="text-sm font-semibold mb-3" id="marketTitle">市场概览 (30天)</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <!-- 第一排 -->
+                <div class="bg-white border border-gray-200 rounded-lg p-3">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="text-xs text-gray-500">上证</div>
+                        <div class="text-sm font-medium text-green-600">+2.3%</div>
+                    </div>
+                    <div class="text-lg font-semibold mb-1">3,287</div>
+                    <div class="chart-mini"><canvas id="chart-sh"></canvas></div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg p-3">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="text-xs text-gray-500">深证</div>
+                        <div class="text-sm font-medium text-green-600">+1.9%</div>
+                    </div>
+                    <div class="text-lg font-semibold mb-1">10,856</div>
+                    <div class="chart-mini"><canvas id="chart-sz"></canvas></div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg p-3">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="text-xs text-gray-500">创业板</div>
+                        <div class="text-sm font-medium text-green-600">+3.1%</div>
+                    </div>
+                    <div class="text-lg font-semibold mb-1">2,146</div>
+                    <div class="chart-mini"><canvas id="chart-cy"></canvas></div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg p-3">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="text-xs text-gray-500">纳指</div>
+                        <div class="text-sm font-medium text-red-600">-0.5%</div>
+                    </div>
+                    <div class="text-lg font-semibold mb-1">16,826</div>
+                    <div class="chart-mini"><canvas id="chart-nasdaq"></canvas></div>
+                </div>
+
+                <!-- 第二排 -->
+                <div class="bg-white border border-gray-200 rounded-lg p-3">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="text-xs text-gray-500">美债10Y</div>
+                        <div class="text-sm font-medium text-green-600">+0.1%</div>
+                    </div>
+                    <div class="text-lg font-semibold mb-1">4.28%</div>
+                    <div class="chart-mini"><canvas id="chart-treasury"></canvas></div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg p-3">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="text-xs text-gray-500">黄金</div>
+                        <div class="text-sm font-medium text-green-600">+1.2%</div>
+                    </div>
+                    <div class="text-lg font-semibold mb-1">$2,045</div>
+                    <div class="chart-mini"><canvas id="chart-gold"></canvas></div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg p-3">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="text-xs text-gray-500">USD/CNY</div>
+                        <div class="text-sm font-medium text-red-600">-0.5%</div>
+                    </div>
+                    <div class="text-lg font-semibold mb-1">7.246</div>
+                    <div class="chart-mini"><canvas id="chart-usdcny"></canvas></div>
+                </div>
+
+                <div class="bg-white border border-gray-200 rounded-lg p-3">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="text-xs text-gray-500">比特币</div>
+                        <div class="text-sm font-medium text-green-600">+2.8%</div>
+                    </div>
+                    <div class="text-lg font-semibold mb-1">$42,350</div>
+                    <div class="chart-mini"><canvas id="chart-btc"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 今日核心 -->
+        <div class="mb-6 p-5 bg-black text-white rounded-lg">
+            <h2 class="text-sm font-semibold mb-2 opacity-70" id="insightTitle">Today's Key Insight</h2>
+            <p class="text-base leading-relaxed" id="insightText">美联储暂停加息预期升温，AI监管政策落地，科技股短期看涨。建议关注AI应用落地机会，评估业务AI化可能性，警惕估值泡沫。</p>
+        </div>
+
+        <!-- 分类标签 -->
+        <div class="mb-6 flex items-center gap-3 overflow-x-auto pb-2">
+            <button onclick="filterTab('all')" class="tab-btn px-4 py-2 text-sm font-medium whitespace-nowrap active" data-tab="all">
+                <span class="zh">全部</span><span class="en hidden">All</span>
+            </button>
+            <button onclick="filterTab('ai')" class="tab-btn px-4 py-2 text-sm font-medium whitespace-nowrap" data-tab="ai">
+                <span class="zh">AI创新</span><span class="en hidden">AI</span>
+            </button>
+            <button onclick="filterTab('entrepreneur')" class="tab-btn px-4 py-2 text-sm font-medium whitespace-nowrap" data-tab="entrepreneur">
+                <span class="zh">创业机会</span><span class="en hidden">Opportunities</span>
+            </button>
+            <button onclick="filterTab('celebrity')" class="tab-btn px-4 py-2 text-sm font-medium whitespace-nowrap" data-tab="celebrity">
+                <span class="zh">名人动态</span><span class="en hidden">Influencers</span>
+            </button>
+            <button onclick="filterTab('newenergy')" class="tab-btn px-4 py-2 text-sm font-medium whitespace-nowrap" data-tab="newenergy">
+                <span class="zh">新能源</span><span class="en hidden">Clean Tech</span>
+            </button>
+            <button onclick="filterTab('trade')" class="tab-btn px-4 py-2 text-sm font-medium whitespace-nowrap" data-tab="trade">
+                <span class="zh">贸易</span><span class="en hidden">Trade</span>
+            </button>
+            <button onclick="filterTab('policy')" class="tab-btn px-4 py-2 text-sm font-medium whitespace-nowrap" data-tab="policy">
+                <span class="zh">政策</span><span class="en hidden">Policy</span>
+            </button>
+            <button onclick="filterTab('apps')" class="tab-btn px-4 py-2 text-sm font-medium whitespace-nowrap" data-tab="apps">
+                <span class="zh">新应用</span><span class="en hidden">New Apps</span>
+            </button>
+        </div>
+
+        <!-- 内容列表 -->
+        <div id="contentList" class="grid grid-cols-1 lg:grid-cols-2 gap-4"></div>
+
+        <!-- 显示计数 -->
+        <div class="mt-6 text-center text-sm text-gray-500">
+            <span class="zh">显示 <span id="countNum">12</span> 条情报</span>
+            <span class="en hidden">Showing <span id="countNumEn">12</span> items</span>
+        </div>
+    </div>
+
+    <!-- 语音播报控制按钮 -->
+    <button id="voiceBtn" class="voice-btn" onclick="toggleVoicePlayer()">
+        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+        </svg>
+    </button>
+
+    <!-- 语音播放器面板 -->
+    <div id="voicePlayer" class="voice-player">
+        <div class="flex items-center justify-between mb-2">
+            <div class="text-sm font-semibold">
+                <span class="zh">正在播报</span>
+                <span class="en hidden">Now Playing</span>
+            </div>
+            <button onclick="closeVoicePlayer()" class="text-white opacity-70 hover:opacity-100">✕</button>
+        </div>
+        
+        <div id="currentTitle" class="text-sm mb-2 opacity-80">准备播报...</div>
+        
+        <div class="progress-bar">
+            <div id="progressFill" class="progress-fill"></div>
+        </div>
+        
+        <div class="flex items-center justify-between gap-3 mt-3">
+            <button onclick="playPrevious()" class="text-white opacity-70 hover:opacity-100 text-sm">
+                ⏮️ <span class="zh">上一条</span><span class="en hidden">Prev</span>
+            </button>
+            <button id="playPauseBtn" onclick="togglePlayPause()" class="text-white text-2xl">
+                ▶️
+            </button>
+            <button onclick="playNext()" class="text-white opacity-70 hover:opacity-100 text-sm">
+                <span class="zh">下一条</span><span class="en hidden">Next</span> ⏭️
+            </button>
+        </div>
+
+        <div class="mt-3 pt-3 border-t border-white/20 text-xs">
+            <span class="zh">进度: <span id="progress">0</span> / <span id="total">0</span></span>
+            <span class="en hidden">Progress: <span id="progressEn">0</span> / <span id="totalEn">0</span></span>
+        </div>
+    </div>
+
+    <!-- 语音设置面板 -->
+    <div id="voiceSettings" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:200; align-items:center; justify-content:center;" onclick="if(event.target===this) closeVoiceSettings()">
+        <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">
+                    <span class="zh">语音设置</span>
+                    <span class="en hidden">Voice Settings</span>
+                </h3>
+                <button onclick="closeVoiceSettings()" class="text-gray-500 hover:text-black">✕</button>
+            </div>
+
+            <div class="space-y-4">
+                <!-- 语音选择 -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">
+                        <span class="zh">选择声音</span>
+                        <span class="en hidden">Voice Type</span>
+                    </label>
+                    <select id="voiceSelect" class="w-full px-4 py-2 border border-gray-300 rounded-md" onchange="updateVoice()">
+                        <option value="male-cn">中文男声 (沉稳)</option>
+                        <option value="female-cn">中文女声 (专业)</option>
+                        <option value="male-en">English Male (Deep)</option>
+                        <option value="female-en">English Female (Clear)</option>
+                    </select>
+                </div>
+
+                <!-- 语速 -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">
+                        <span class="zh">播报速度</span>
+                        <span class="en hidden">Speed</span>
+                        <span class="text-gray-500" id="speedValue">1.0x</span>
+                    </label>
+                    <input type="range" id="speedRange" min="0.5" max="2" step="0.1" value="1" 
+                        class="w-full" oninput="updateSpeed(this.value)">
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>0.5x</span>
+                        <span>1.0x</span>
+                        <span>2.0x</span>
+                    </div>
+                </div>
+
+                <!-- 音量 -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">
+                        <span class="zh">音量</span>
+                        <span class="en hidden">Volume</span>
+                        <span class="text-gray-500" id="volumeValue">100%</span>
+                    </label>
+                    <input type="range" id="volumeRange" min="0" max="100" value="100" 
+                        class="w-full" oninput="updateVolume(this.value)">
+                </div>
+
+                <!-- 测试 -->
+                <button onclick="testVoice()" class="w-full py-2 bg-black text-white rounded-md hover:bg-gray-800">
+                    <span class="zh">🔊 试听</span>
+                    <span class="en hidden">🔊 Test</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentLang = 'zh';
+        let currentTab = 'all';
+
+        // 生成30天数据
+        function generate30DaysData(baseValue, volatility = 0.02) {
+            const data = [];
+            let value = baseValue;
+            for (let i = 0; i < 30; i++) {
+                const change = (Math.random() - 0.5) * volatility * value;
+                value += change;
+                data.push(parseFloat(value.toFixed(2)));
+            }
+            return data;
+        }
+
+        const marketData = {
+            sh: generate30DaysData(3200, 0.015),
+            sz: generate30DaysData(10650, 0.015),
+            cy: generate30DaysData(2080, 0.02),
+            nasdaq: generate30DaysData(16900, 0.01),
+            treasury: generate30DaysData(4.15, 0.02),
+            gold: generate30DaysData(2020, 0.015),
+            usdcny: generate30DaysData(7.28, 0.008),
+            btc: generate30DaysData(41200, 0.03)
+        };
+
+        // 初始化迷你图表
+        function initMiniChart(id, data, isPositive) {
+            const ctx = document.getElementById(id).getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array(30).fill(''),
+                    datasets: [{
+                        data: data,
+                        borderColor: isPositive ? '#10b981' : '#ef4444',
+                        borderWidth: 1.5,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    }
+                }
+            });
+        }
+
+        // 初始化所有图表
+        initMiniChart('chart-sh', marketData.sh, true);
+        initMiniChart('chart-sz', marketData.sz, true);
+        initMiniChart('chart-cy', marketData.cy, true);
+        initMiniChart('chart-nasdaq', marketData.nasdaq, false);
+        initMiniChart('chart-treasury', marketData.treasury, true);
+        initMiniChart('chart-gold', marketData.gold, true);
+        initMiniChart('chart-usdcny', marketData.usdcny, false);
+        initMiniChart('chart-btc', marketData.btc, true);
+
+        // 内容数据（10-20条精选）
+        const contentData = [
+            {
+                id: 1,
+                category: 'ai',
+                badge: 'hot',
+                title: { zh: 'OpenAI GPT-5 开启内测', en: 'OpenAI GPT-5 Beta Released' },
+                summary: { zh: '性能提升300%，成本降40%', en: 'Performance up 300%, cost down 40%' },
+                points: {
+                    zh: ['API成本降低40%，适合中小创业团队', '代码生成准确率92%，可替代初级工程师', '长视频理解能力，适合做教育/媒体产品'],
+                    en: ['API costs down 40%, affordable for startups', 'Code accuracy 92%, can replace junior devs', 'Long video understanding for EdTech/Media']
+                },
+                actions: {
+                    zh: ['评估业务AI化可能性，降低人力成本', '规划基于GPT-5的新产品线', '测试API性能，准备技术迁移'],
+                    en: ['Assess AI automation potential', 'Plan GPT-5 based products', 'Test API performance']
+                },
+                risk: { zh: '发布可能延期，价格未最终确定', en: 'Launch may delay, pricing TBD' }
+            },
+            {
+                id: 2,
+                category: 'entrepreneur',
+                badge: 'new',
+                title: { zh: 'Y Combinator 2026春季招募启动', en: 'YC Spring 2026 Applications Open' },
+                summary: { zh: '重点关注AI应用、气候科技', en: 'Focus on AI apps, climate tech' },
+                points: {
+                    zh: ['接受率仅1.5%，但中国团队机会增加', '提供$500K种子轮+3个月加速', '重点寻找AI+垂直行业解决方案'],
+                    en: ['1.5% acceptance, more spots for China', '$500K seed + 3mo acceleration', 'AI + vertical solutions wanted']
+                },
+                actions: {
+                    zh: ['2月15日前提交申请，准备Demo视频', '找美国联合创始人提高成功率', '研究YC校友项目，寻找差异化方向'],
+                    en: ['Submit by Feb 15 with demo', 'Find US co-founder', 'Study YC alumni for gaps']
+                },
+                risk: { zh: '竞争激烈，需要清晰的商业模式', en: 'Highly competitive, need clear business model' }
+            },
+            {
+                id: 3,
+                category: 'celebrity',
+                badge: 'trending',
+                title: { zh: '马斯克：特斯拉FSD将在中国落地', en: 'Musk: Tesla FSD Coming to China' },
+                summary: { zh: '已获监管批准，Q2开始推送', en: 'Regulatory approved, Q2 rollout' },
+                points: {
+                    zh: ['中国将成为FSD最大市场', '本地化数据训练模型', '与百度地图深度合作'],
+                    en: ['China to be largest FSD market', 'Localized data training', 'Deep Baidu Maps integration']
+                },
+                actions: {
+                    zh: ['关注自动驾驶产业链机会', '研究FSD API商业化可能性', '考虑智能车载应用创业方向'],
+                    en: ['Watch autonomous driving supply chain', 'Study FSD API opportunities', 'Consider in-car app ideas']
+                },
+                risk: { zh: '监管政策可能变化', en: 'Regulatory uncertainty' }
+            },
+            {
+                id: 4,
+                category: 'apps',
+                badge: 'new',
+                title: { zh: 'Sora视频工具正式开放API', en: 'Sora Video API Now Public' },
+                summary: { zh: '支持文本生成60秒视频', en: 'Text to 60s video generation' },
+                points: {
+                    zh: ['$0.5/分钟，比人工制作便宜90%', '支持16:9/9:16/1:1多种比例', '适合短视频营销、在线教育场景'],
+                    en: ['$0.5/min, 90% cheaper than manual', 'Multiple aspect ratios', 'Perfect for social media, EdTech']
+                },
+                actions: {
+                    zh: ['测试用于产品演示视频生成', '开发基于Sora的营销自动化工具', '探索视频内容创业方向'],
+                    en: ['Test for product demo videos', 'Build Sora-based marketing tools', 'Explore video content startups']
+                },
+                risk: { zh: '生成质量仍不稳定', en: 'Generation quality still unstable' }
+            },
+            {
+                id: 5,
+                category: 'newenergy',
+                badge: 'hot',
+                title: { zh: '宁德时代发布钠离子电池2.0', en: 'CATL Sodium-ion Battery 2.0' },
+                summary: { zh: '成本降50%，能量密度提升40%', en: 'Cost down 50%, density up 40%' },
+                points: {
+                    zh: ['适合储能和低端电动车市场', '2027年量产，订单已排满', '打破锂资源依赖'],
+                    en: ['For energy storage & budget EVs', '2027 mass production, orders full', 'Breaks lithium dependence']
+                },
+                actions: {
+                    zh: ['关注储能创业机会', '研究钠电池供应链', '评估替换现有电池方案可行性'],
+                    en: ['Watch energy storage opportunities', 'Study sodium supply chain', 'Assess battery replacement feasibility']
+                },
+                risk: { zh: '技术仍在验证阶段', en: 'Technology still in validation' }
+            },
+            {
+                id: 6,
+                category: 'policy',
+                title: { zh: '国务院AI产业三年计划', en: 'China AI 3-Year Plan' },
+                summary: { zh: '500亿专项基金，2027年破万亿', en: '$70B fund, $1.4T by 2027' },
+                points: {
+                    zh: ['重点支持垂直行业AI应用', '中小企业可申报最高1000万补贴', '税收优惠政策延续至2027年'],
+                    en: ['Focus on vertical AI apps', 'SMEs can get up to $1.4M grants', 'Tax benefits through 2027']
+                },
+                actions: {
+                    zh: ['准备政府项目申报材料', '找垂直行业痛点切入', '组建符合申报要求的团队'],
+                    en: ['Prepare grant applications', 'Find vertical pain points', 'Build qualified team']
+                },
+                risk: { zh: '申报流程复杂，竞争激烈', en: 'Complex application, high competition' }
+            },
+            {
+                id: 7,
+                category: 'entrepreneur',
+                title: { zh: 'Stripe Atlas支持中国创业者', en: 'Stripe Atlas Opens to China' },
+                summary: { zh: '可快速注册美国公司', en: 'Fast US company formation' },
+                points: {
+                    zh: ['$500注册Delaware C-Corp', '自动开设美国银行账户', '集成Stripe支付和税务工具'],
+                    en: ['$500 for Delaware C-Corp', 'Auto US bank account', 'Built-in Stripe payments & tax']
+                },
+                actions: {
+                    zh: ['考虑面向海外市场的产品', '注册美国公司便于融资', '使用Stripe处理国际支付'],
+                    en: ['Consider global market products', 'US entity helps fundraising', 'Use Stripe for intl payments']
+                },
+                risk: { zh: '需要了解美国公司运营', en: 'Need US company operation knowledge' }
+            },
+            {
+                id: 8,
+                category: 'celebrity',
+                title: { zh: '黄仁勋：2026是AI应用爆发年', en: 'Jensen Huang: 2026 AI Apps Boom' },
+                summary: { zh: 'GTC大会透露GPU产能翻倍', en: 'GTC reveals 2x GPU capacity' },
+                points: {
+                    zh: ['H200芯片Q2大规模出货', 'GPU租赁价格将下降30%', '看好AI+医疗、AI+制造'],
+                    en: ['H200 mass shipment Q2', 'GPU rental down 30%', 'Bullish on AI+Health, AI+Manufacturing']
+                },
+                actions: {
+                    zh: ['现在是AI创业最佳时机', '算力成本下降，产品可行性提高', '关注英伟达生态合作机会'],
+                    en: ['Best time for AI startups', 'Lower compute costs = more viable', 'Watch NVIDIA ecosystem']
+                },
+                risk: { zh: '市场竞争加剧', en: 'Market competition intensifying' }
+            },
+            {
+                id: 9,
+                category: 'trade',
+                title: { zh: '商务部芯片出口管制放宽', en: 'Commerce Eases Chip Export Rules' },
+                summary: { zh: '28nm制程解禁', en: '28nm process unrestricted' },
+                points: {
+                    zh: ['利好半导体出口企业', '预计+200亿美元出口额', '智能硬件成本下降'],
+                    en: ['Benefits chip exporters', '+$200B export potential', 'Lower hardware costs']
+                },
+                actions: {
+                    zh: ['评估智能硬件创业机会', '关注供应链成本变化', '考虑芯片采购议价'],
+                    en: ['Assess smart hardware opportunities', 'Watch supply chain costs', 'Negotiate chip pricing']
+                },
+                risk: { zh: '政策可能反复', en: 'Policy may reverse' }
+            },
+            {
+                id: 10,
+                category: 'apps',
+                title: { zh: 'Notion AI功能全面升级', en: 'Notion AI Major Upgrade' },
+                summary: { zh: '支持全文档智能重写', en: 'Full doc smart rewrite' },
+                points: {
+                    zh: ['一键生成PRD、竞品分析', 'AI会议纪要自动整理', '与Slack/Gmail深度集成'],
+                    en: ['One-click PRD, competitor analysis', 'Auto meeting notes', 'Deep Slack/Gmail integration']
+                },
+                actions: {
+                    zh: ['测试用于团队协作效率提升', '研究类似工具的创业机会', '评估替代现有工具可能性'],
+                    en: ['Test for team productivity', 'Study similar tool opportunities', 'Assess replacement feasibility']
+                },
+                risk: { zh: 'AI生成内容需人工审核', en: 'AI content needs human review' }
+            },
+            {
+                id: 11,
+                category: 'newenergy',
+                title: { zh: '欧盟碳关税正式实施', en: 'EU Carbon Border Tax Effective' },
+                summary: { zh: '影响出口企业成本', en: 'Impacts export costs' },
+                points: {
+                    zh: ['高碳产品出口成本增加5-15%', '清洁能源企业获得竞争优势', '倒逼制造业绿色转型'],
+                    en: ['High-carbon exports +5-15% cost', 'Clean energy gains advantage', 'Forces green manufacturing']
+                },
+                actions: {
+                    zh: ['评估业务碳足迹', '考虑绿色供应链改造', '关注碳交易市场机会'],
+                    en: ['Assess carbon footprint', 'Consider green supply chain', 'Watch carbon trading market']
+                },
+                risk: { zh: '合规成本较高', en: 'High compliance costs' }
+            },
+            {
+                id: 12,
+                category: 'ai',
+                title: { zh: 'Anthropic Claude 4正式发布', en: 'Anthropic Claude 4 Released' },
+                summary: { zh: '100万token上下文', en: '1M token context' },
+                points: {
+                    zh: ['适合法律、医疗长文档分析', '成本降50%，速度提升2倍', '支持PDF、图片、代码输入'],
+                    en: ['Perfect for legal, medical docs', 'Cost -50%, speed 2x', 'PDF, image, code input']
+                },
+                actions: {
+                    zh: ['对比GPT-5选择最佳模型', '探索长文档AI应用场景', '测试合同/报告自动分析'],
+                    en: ['Compare with GPT-5', 'Explore long-doc use cases', 'Test contract/report analysis']
+                },
+                risk: { zh: '超长上下文影响响应速度', en: 'Long context slows response' }
+            }
+        ];
+
+        // 渲染内容
+        function renderContent() {
+            const container = document.getElementById('contentList');
+            let filtered = contentData;
+
+            if (currentTab !== 'all') {
+                filtered = contentData.filter(item => item.category === currentTab);
+            }
+
+            // 限制显示10-20条
+            filtered = filtered.slice(0, 12);
+
+            document.getElementById('countNum').textContent = filtered.length;
+            document.getElementById('countNumEn').textContent = filtered.length;
+
+            container.innerHTML = filtered.map(item => `
+                <div class="card bg-white border border-gray-200 rounded-lg p-5">
+                    <div class="flex items-start justify-between mb-3">
+                        <span class="badge badge-${item.badge || 'new'}">${item.badge === 'hot' ? '🔥' : item.badge === 'trending' ? '📈' : '🆕'}</span>
+                        <span class="text-xs text-gray-500">${getCategoryLabel(item.category)}</span>
+                    </div>
+                    
+                    <h3 class="text-lg font-semibold mb-2">
+                        <span class="zh">${item.title.zh}</span>
+                        <span class="en hidden">${item.title.en}</span>
+                    </h3>
+                    
+                    <p class="text-sm text-gray-600 mb-4">
+                        <span class="zh">${item.summary.zh}</span>
+                        <span class="en hidden">${item.summary.en}</span>
+                    </p>
+                    
+                    <div class="space-y-3">
+                        <div>
+                            <div class="text-xs font-semibold text-gray-700 mb-1">
+                                <span class="zh">核心要点</span>
+                                <span class="en hidden">Key Points</span>
+                            </div>
+                            <div class="text-sm text-gray-600 space-y-1">
+                                ${item.points[currentLang].map(p => `<div>• ${p}</div>`).join('')}
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div class="text-xs font-semibold text-gray-700 mb-1">
+                                <span class="zh">创业建议</span>
+                                <span class="en hidden">Action Items</span>
+                            </div>
+                            <div class="text-sm text-gray-600 space-y-1">
+                                ${item.actions[currentLang].map(a => `<div>→ ${a}</div>`).join('')}
+                            </div>
+                        </div>
+                        
+                        <div class="pt-2 border-t border-gray-100">
+                            <div class="text-xs font-semibold text-gray-700 mb-1">
+                                <span class="zh">风险提示</span>
+                                <span class="en hidden">Risk</span>
+                            </div>
+                            <div class="text-sm text-gray-600">
+                                <span class="zh">${item.risk.zh}</span>
+                                <span class="en hidden">${item.risk.en}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 切换语言
+        function toggleLanguage() {
+            currentLang = currentLang === 'zh' ? 'en' : 'zh';
+            
+            if (currentLang === 'en') {
+                document.querySelectorAll('.zh').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.en').forEach(el => el.classList.remove('hidden'));
+                document.getElementById('langBtn').textContent = '中';
+                document.getElementById('mainTitle').textContent = 'Entrepreneur Intelligence';
+                document.getElementById('subtitle').textContent = 'Daily Insights for Decision Making';
+                document.getElementById('marketTitle').textContent = 'Market Overview (30d)';
+                document.getElementById('insightTitle').textContent = 'Today\'s Key Insight';
+                document.getElementById('insightText').textContent = 'Fed pause expectations rise, AI regulation lands, tech stocks bullish short-term. Focus on AI application opportunities, assess business AI potential, beware valuation bubbles.';
+                document.getElementById('adminLink').textContent = 'Admin';
+            } else {
+                document.querySelectorAll('.zh').forEach(el => el.classList.remove('hidden'));
+                document.querySelectorAll('.en').forEach(el => el.classList.add('hidden'));
+                document.getElementById('langBtn').textContent = 'EN';
+                document.getElementById('mainTitle').textContent = '创业者情报中心';
+                document.getElementById('subtitle').textContent = '每日精选 · 助力决策';
+                document.getElementById('marketTitle').textContent = '市场概览 (30天)';
+                document.getElementById('insightTitle').textContent = '今日核心';
+                document.getElementById('insightText').textContent = '美联储暂停加息预期升温，AI监管政策落地，科技股短期看涨。建议关注AI应用落地机会，评估业务AI化可能性，警惕估值泡沫。';
+                document.getElementById('adminLink').textContent = '管理';
+            }
+        }
+
+        // 筛选标签
+        function filterTab(tab) {
+            currentTab = tab;
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            event.target.classList.add('active');
+            renderContent();
+        }
+
+        function getCategoryLabel(cat) {
+            const labels = {
+                ai: 'AI',
+                entrepreneur: currentLang === 'zh' ? '创业' : 'Startup',
+                celebrity: currentLang === 'zh' ? '名人' : 'Celebrity',
+                newenergy: currentLang === 'zh' ? '新能源' : 'Energy',
+                trade: currentLang === 'zh' ? '贸易' : 'Trade',
+                policy: currentLang === 'zh' ? '政策' : 'Policy',
+                apps: currentLang === 'zh' ? '应用' : 'Apps'
+            };
+            return labels[cat];
+        }
+
+        // 初始化
+        renderContent();
+
+        // ====== 语音播报功能 ======
+        let speechSynth = window.speechSynthesis;
+        let currentUtterance = null;
+        let currentIndex = 0;
+        let isPlaying = false;
+        let availableVoices = [];
+        let voiceSettings = {
+            type: 'male-cn',
+            speed: 1.0,
+            volume: 1.0
+        };
+
+        // 加载可用语音
+        function loadVoices() {
+            availableVoices = speechSynth.getVoices();
+        }
+
+        if (speechSynth.onvoiceschanged !== undefined) {
+            speechSynth.onvoiceschanged = loadVoices;
+        }
+        loadVoices();
+
+        // 选择合适的语音
+        function selectVoice(type) {
+            const voices = speechSynth.getVoices();
+            let voice = null;
+
+            if (type === 'male-cn') {
+                // 中文男声 - 优先选择专业的声音
+                voice = voices.find(v => v.lang.includes('zh') && v.name.includes('Male')) ||
+                        voices.find(v => v.lang.includes('zh') && !v.name.includes('Female')) ||
+                        voices.find(v => v.lang.includes('zh'));
+            } else if (type === 'female-cn') {
+                // 中文女声 - 避免可爱声音
+                voice = voices.find(v => v.lang.includes('zh') && v.name.includes('Female') && !v.name.includes('Ting')) ||
+                        voices.find(v => v.lang.includes('zh') && v.name.includes('Female'));
+            } else if (type === 'male-en') {
+                voice = voices.find(v => v.lang.includes('en') && v.name.includes('Male')) ||
+                        voices.find(v => v.lang.includes('en-US') && !v.name.includes('Female'));
+            } else if (type === 'female-en') {
+                voice = voices.find(v => v.lang.includes('en') && v.name.includes('Female') && !v.name.includes('Samantha')) ||
+                        voices.find(v => v.lang.includes('en-GB'));
+            }
+
+            return voice || voices.find(v => v.lang.includes(currentLang === 'zh' ? 'zh' : 'en'));
+        }
+
+        // 生成播报文本
+        function generateSpeechText(item) {
+            const lang = currentLang;
+            const title = item.title[lang];
+            const summary = item.summary[lang];
+            const points = item.points[lang].join('。 ');
+            const actions = item.actions[lang].join('。 ');
+
+            if (lang === 'zh') {
+                return `${title}。${summary}。核心要点：${points}。创业建议：${actions}`;
+            } else {
+                return `${title}. ${summary}. Key points: ${points}. Action items: ${actions}`;
+            }
+        }
+
+        // 播放指定新闻
+        function playNewsItem(index) {
+            if (index < 0 || index >= contentData.length) return;
+
+            currentIndex = index;
+            const item = contentData[index];
+            const text = generateSpeechText(item);
+
+            // 停止当前播放
+            if (currentUtterance) {
+                speechSynth.cancel();
+            }
+
+            // 创建新的语音
+            currentUtterance = new SpeechSynthesisUtterance(text);
+            currentUtterance.voice = selectVoice(voiceSettings.type);
+            currentUtterance.rate = voiceSettings.speed;
+            currentUtterance.volume = voiceSettings.volume;
+            currentUtterance.lang = currentLang === 'zh' ? 'zh-CN' : 'en-US';
+
+            // 更新UI
+            document.getElementById('currentTitle').textContent = item.title[currentLang];
+            document.getElementById('progress').textContent = index + 1;
+            document.getElementById('progressEn').textContent = index + 1;
+            document.getElementById('total').textContent = contentData.length;
+            document.getElementById('totalEn').textContent = contentData.length;
+
+            // 播放完成后自动播放下一条
+            currentUtterance.onend = () => {
+                if (isPlaying && currentIndex < contentData.length - 1) {
+                    setTimeout(() => playNext(), 500);
+                } else {
+                    isPlaying = false;
+                    updatePlayButton();
+                }
+            };
+
+            // 进度条动画（估算）
+            const duration = text.length / voiceSettings.speed * 60; // 估算时长(ms)
+            animateProgress(duration);
+
+            speechSynth.speak(currentUtterance);
+            isPlaying = true;
+            updatePlayButton();
+        }
+
+        // 进度条动画
+        function animateProgress(duration) {
+            const fill = document.getElementById('progressFill');
+            fill.style.width = '0%';
+            setTimeout(() => {
+                fill.style.transition = `width ${duration}ms linear`;
+                fill.style.width = '100%';
+            }, 100);
+        }
+
+        // 切换播放/暂停
+        function togglePlayPause() {
+            if (isPlaying) {
+                speechSynth.pause();
+                isPlaying = false;
+            } else {
+                if (speechSynth.paused) {
+                    speechSynth.resume();
+                } else {
+                    playNewsItem(currentIndex);
+                }
+                isPlaying = true;
+            }
+            updatePlayButton();
+        }
+
+        // 上一条
+        function playPrevious() {
+            if (currentIndex > 0) {
+                playNewsItem(currentIndex - 1);
+            }
+        }
+
+        // 下一条
+        function playNext() {
+            if (currentIndex < contentData.length - 1) {
+                playNewsItem(currentIndex + 1);
+            }
+        }
+
+        // 更新播放按钮
+        function updatePlayButton() {
+            const btn = document.getElementById('playPauseBtn');
+            const voiceBtn = document.getElementById('voiceBtn');
+            
+            if (isPlaying) {
+                btn.textContent = '⏸️';
+                voiceBtn.classList.add('playing');
+            } else {
+                btn.textContent = '▶️';
+                voiceBtn.classList.remove('playing');
+            }
+        }
+
+        // 显示/隐藏播放器
+        function toggleVoicePlayer() {
+            const player = document.getElementById('voicePlayer');
+            const btn = document.getElementById('voiceBtn');
+            
+            if (player.classList.contains('show')) {
+                player.classList.remove('show');
+                btn.style.display = 'flex';
+            } else {
+                player.classList.add('show');
+                btn.style.display = 'none';
+                if (!isPlaying) {
+                    playNewsItem(0);
+                }
+            }
+        }
+
+        function closeVoicePlayer() {
+            document.getElementById('voicePlayer').classList.remove('show');
+            document.getElementById('voiceBtn').style.display = 'flex';
+            speechSynth.cancel();
+            isPlaying = false;
+            updatePlayButton();
+        }
+
+        // 语音设置
+        function openVoiceSettings() {
+            document.getElementById('voiceSettings').style.display = 'flex';
+        }
+
+        function closeVoiceSettings() {
+            document.getElementById('voiceSettings').style.display = 'none';
+        }
+
+        function updateVoice() {
+            voiceSettings.type = document.getElementById('voiceSelect').value;
+            localStorage.setItem('voiceSettings', JSON.stringify(voiceSettings));
+        }
+
+        function updateSpeed(value) {
+            voiceSettings.speed = parseFloat(value);
+            document.getElementById('speedValue').textContent = value + 'x';
+            localStorage.setItem('voiceSettings', JSON.stringify(voiceSettings));
+        }
+
+        function updateVolume(value) {
+            voiceSettings.volume = parseFloat(value) / 100;
+            document.getElementById('volumeValue').textContent = value + '%';
+            localStorage.setItem('voiceSettings', JSON.stringify(voiceSettings));
+        }
+
+        function testVoice() {
+            const testText = currentLang === 'zh' 
+                ? '您好，这是语音测试。OpenAI GPT-5 开启内测，性能提升三百倍。'
+                : 'Hello, this is a voice test. OpenAI GPT-5 beta released with 300% performance improvement.';
+            
+            const utterance = new SpeechSynthesisUtterance(testText);
+            utterance.voice = selectVoice(voiceSettings.type);
+            utterance.rate = voiceSettings.speed;
+            utterance.volume = voiceSettings.volume;
+            utterance.lang = currentLang === 'zh' ? 'zh-CN' : 'en-US';
+            
+            speechSynth.speak(utterance);
+        }
+
+        // 加载保存的设置
+        const savedSettings = localStorage.getItem('voiceSettings');
+        if (savedSettings) {
+            voiceSettings = JSON.parse(savedSettings);
+            document.getElementById('voiceSelect').value = voiceSettings.type;
+            document.getElementById('speedRange').value = voiceSettings.speed;
+            document.getElementById('volumeRange').value = voiceSettings.volume * 100;
+            document.getElementById('speedValue').textContent = voiceSettings.speed + 'x';
+            document.getElementById('volumeValue').textContent = (voiceSettings.volume * 100) + '%';
+        }
+    </script>
+</body>
+</html>
